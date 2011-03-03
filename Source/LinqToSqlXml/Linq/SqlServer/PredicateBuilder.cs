@@ -32,6 +32,8 @@ namespace LinqToSqlXml.SqlServer
 
             var lambdaExpression = operand as LambdaExpression;
             var result =  BuildPredicate(lambdaExpression.Body);
+
+            paths.Pop();
             return result;
         }
 
