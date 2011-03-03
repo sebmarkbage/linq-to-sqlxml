@@ -21,7 +21,7 @@ namespace LinqToSqlXml.SqlServer
             return "$" + ((char)(64 + index));
         }
 
-        public string[] TranslateToProjection(MethodCallExpression node)
+        public string TranslateToProjection(MethodCallExpression node)
         {
             paths.Push("document[1]/");
             var unary = node.Arguments[1] as UnaryExpression;
@@ -45,12 +45,10 @@ namespace LinqToSqlXml.SqlServer
             var x = XElement.Parse(selector);
             selector = x.ToString();
 
-            columns = new string[2];
-            columns[0] = "Id";
-            columns[1] = "DocumentData.query('" + selector + "') as DocumentData";
+            var result = "DocumentData.query('" + selector + "') as DocumentData";
 
             paths.Pop();
-            return columns;
+            return result;
         }
 
         private string BuildSelectors2(MemberInitExpression selector, string[] members, string owner)
