@@ -33,7 +33,7 @@ namespace LinqToSqlXml.SqlServer
 
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
-            if (node.Method.DeclaringType == typeof (Queryable))
+            if (node.Method.DeclaringType == typeof(Queryable))
             {
                 switch (node.Method.Name)
                 {
@@ -41,14 +41,14 @@ namespace LinqToSqlXml.SqlServer
                         TranslateToOrderBy(node);
                         break;
                     case "Where":
-                        {
-                            if (wherepredicate != "")
-                                wherepredicate += " and " + Environment.NewLine;
-                            wherepredicate +=  predicateBuilder.TranslateToWhere(node);
+                        if (wherepredicate != "")
+                            wherepredicate += " and " + Environment.NewLine;
+                        wherepredicate += predicateBuilder.TranslateToWhere(node);
                         break;
-                        }
                     case "OfType":
-                        TranslateToOfType(node);
+                        if (wherepredicate != "")
+                            wherepredicate += " and " + Environment.NewLine;
+                        wherepredicate += predicateBuilder.TranslateToOfType(node);
                         break;
                     case "Take":
                         TranslateToTake(node);
@@ -70,19 +70,7 @@ namespace LinqToSqlXml.SqlServer
         }
 
         //move to predicate builder and fix it
-        private void TranslateToOfType(MethodCallExpression node)
-        {
-            var typeExpression = node.Arguments[0] as ConstantExpression;
-            object value = typeExpression.Value;
-            var queryable = value as IQueryable;
-            Type ofType = queryable.ElementType;
 
-//            where += " and " + Environment.NewLine;
-            string typeName = ofType.SerializedName();
-            string query = string.Format("(documentdata.exist('/document/__meta/type/text()[. = \"{0}\"]') = 1)",
-                                         typeName);
-//            where += query;
-        }
 
         private void TranslateToOrderBy(MethodCallExpression node)
         {

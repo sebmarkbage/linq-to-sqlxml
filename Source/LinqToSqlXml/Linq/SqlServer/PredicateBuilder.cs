@@ -34,6 +34,7 @@ namespace LinqToSqlXml.SqlServer
             var result =  BuildPredicate(lambdaExpression.Body);
 
             paths.Pop();
+
             return result;
         }
 
@@ -197,6 +198,17 @@ namespace LinqToSqlXml.SqlServer
                 return string.Format("xs:dateTime({0})", DocumentSerializer.SerializeDateTime((DateTime)value));
 
             return constantExpression.Value.ToString();
+        }
+
+        public string TranslateToOfType(MethodCallExpression node)
+        {
+            Type ofType = node.Method.GetGenericArguments()[0] as Type;
+
+            string typeName = ofType.SerializedName();
+
+            //check if type attrib equals typename OR if typename exists in metadata type array
+            string query = string.Format("(__meta[type[. = \"{0}\"]] or @type=\"{0}\")", typeName);
+            return query;
         }
     }
 }

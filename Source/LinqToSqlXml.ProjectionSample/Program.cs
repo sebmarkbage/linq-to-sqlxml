@@ -26,7 +26,7 @@ namespace ProjectionSample
             ctx.EnsureDatabaseExists();
 
 
-            var query = (from order in ctx.GetCollection<Order>().AsQueryable()
+            var query = (from order in ctx.GetCollection<Order>().AsQueryable().OfType<Order>()
                                             where order.OrderTotal > 0
                                             where order.ShippingDate != null
                                             //select order
