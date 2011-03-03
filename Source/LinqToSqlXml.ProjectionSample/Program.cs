@@ -30,6 +30,7 @@ namespace ProjectionSample
                                             where order.OrderTotal > 0
                                             where order.ShippingDate != null
                                             where order.ShippingAddress.Line1 != "aa"
+                                            where order.ShippingAddress is Address
                                             //select order
                                             select new Projection
                                                        {

@@ -112,11 +112,11 @@ namespace LinqToSqlXml.SqlServer
             string propertyPath = BuildPredicate(methodCallExpression.Arguments[0]);
             var lambda = methodCallExpression.Arguments[1] as LambdaExpression;
             Expression body = lambda.Body;
-            string freeVariable = GetFreeVariable();
-            paths.Push(freeVariable + "/");
+            string variable = GetFreeVariable();
+            paths.Push(variable + "/");
             string part = BuildPredicate(body);
             paths.Pop();
-            string predicate = string.Format("{0}( for {1} in {2}/element return {3})", functionName, freeVariable,
+            string predicate = string.Format("{0}( for {1} in {2}/element return {3})", functionName, variable,
                                              propertyPath,
                                              part);
             return predicate;
@@ -156,9 +156,11 @@ namespace LinqToSqlXml.SqlServer
         {
             var typeBinaryExpression = expression as TypeBinaryExpression;
             string left = BuildPredicate(typeBinaryExpression.Expression);
-            string right = typeBinaryExpression.TypeOperand.SerializedName();
-            return string.Format("(documentdata.exist('{0}/__meta/type/text()[. = \"{1}\"]') = 1)",
-                                 left, right);
+            string typeName = typeBinaryExpression.TypeOperand.SerializedName();
+
+            //check if type attrib equals typename OR if typename exists in metadata type array
+            string query = string.Format("{0}[(@type=\"{1}\" or __meta[type[. = \"{1}\"]])]",left, typeName);
+            return query;
         }
 
         private string BuildPredicateMemberAccess(Expression expression)
