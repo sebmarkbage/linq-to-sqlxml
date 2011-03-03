@@ -2,16 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 using LinqToSqlXml;
+using System.Diagnostics;
 
-namespace ProjectionSamplek
+namespace ProjectionSample
 {
     public class Projection
     {
         public decimal OrderTotal { get; set; }
         public Guid CustomerId { get; set; }
-        public IEnumerable<ProjectionD> Details { get; set; }
+        public IEnumerable<ProjectionD> OrderDetails { get; set; }
     }
-
+    
     public class ProjectionD
     {
         public decimal LineTotal { get; set; }
@@ -25,29 +26,36 @@ namespace ProjectionSamplek
             ctx.EnsureDatabaseExists();
 
 
-            IQueryable<Projection> query = (from order in ctx.GetCollection<Order>().AsQueryable()
+            var query = (from order in ctx.GetCollection<Order>().AsQueryable()
                                             where order.OrderTotal > 0
                                             where order.ShippingDate != null
+                                            //select order
                                             select new Projection
                                                        {
                                                            OrderTotal = order.OrderTotal,
                                                            CustomerId = order.CustomerId,
-                                                           Details =
+                                                           OrderDetails =
                                                                order.OrderDetails.Select(
                                                                    d =>
                                                                    new ProjectionD()
                                                                        {
                                                                            LineTotal = d.ItemPrice * d.Quantity
                                                                        }),
-                                                       }).Take(100);
+                                                       }
+                                                       ).Take(100);
 
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            var result = query.ToList();
+            sw.Stop();
+            
 
-            List<Projection> result = query.ToList();
-
-            foreach (Projection order in result)
+            foreach (var order in result)
             {
-                Console.WriteLine("{0} {1}", order.OrderTotal, order.Details.Count());
+                Console.WriteLine("{0} {1}", order.OrderTotal, order.OrderDetails.Count());
             }
+
+            Console.WriteLine(sw.Elapsed);
             Console.ReadLine();
             return;
 
