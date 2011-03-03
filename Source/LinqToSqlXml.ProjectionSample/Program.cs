@@ -1,99 +1,134 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using LinqToSqlXml;
 
-namespace ProjectionSample
+namespace ProjectionSamplek
 {
-
     public class Projection
     {
         public decimal OrderTotal { get; set; }
         public Guid CustomerId { get; set; }
-        public ICollection<OrderDetail> Details { get; set; }
+        public IEnumerable<ProjectionD> Details { get; set; }
     }
 
-    class Program
+    public class ProjectionD
     {
-        static void Main(string[] args)
+        public decimal LineTotal { get; set; }
+    }
+
+    internal class Program
+    {
+        private static void Main(string[] args)
         {
             var ctx = new DocumentContext("main");
             ctx.EnsureDatabaseExists();
 
 
-            var query = (from order in ctx.GetCollection<Order>().AsQueryable()
-                where order.OrderTotal > 100000000 
-                where order.ShippingDate == null
-                where order.OrderDetails.Sum(d => d.Quantity * d.ItemPrice) > 10
-                select new Projection
-                { 
-                    OrderTotal = order.OrderDetails.Sum(d => d.ItemPrice * d.Quantity),
-                    CustomerId = order.CustomerId , 
-                    Details = order.OrderDetails
-                })
-                .Take(5);
+            IQueryable<Projection> query = (from order in ctx.GetCollection<Order>().AsQueryable()
+                                            where order.OrderTotal > 0
+                                            where order.ShippingDate != null
+                                            select new Projection
+                                                       {
+                                                           OrderTotal = order.OrderTotal,
+                                                           CustomerId = order.CustomerId,
+                                                           Details =
+                                                               order.OrderDetails.Select(
+                                                                   d =>
+                                                                   new ProjectionD()
+                                                                       {
+                                                                           LineTotal = d.ItemPrice * d.Quantity
+                                                                       }),
+                                                       }).Take(100);
 
-            var result = query.ToList();
 
-            foreach (var order in result)
+            List<Projection> result = query.ToList();
+
+            foreach (Projection order in result)
             {
-                Console.WriteLine("{0} {1}",order.OrderTotal,order.Details.Count);
+                Console.WriteLine("{0} {1}", order.OrderTotal, order.Details.Count());
             }
             Console.ReadLine();
+            return;
 
-            //for (int i = 6000; i < 12000; i++)
-            //{
-            //    Console.WriteLine(i);
-            //    var acmeInc = new Customer
-            //                      {
-            //                          Address = new Address
-            //                                        {
-            //                                            City = "Stora mellösa",
-            //                                            Line1 = "Linfrövägen " + i,
-            //                                            State = "T",
-            //                                            ZipCode = "71572"
-            //                                        },
-            //                          Name = "Precio" + i ,
+            for (int i = 0; i < 1000; i++)
+            {
+                Console.WriteLine(i);
+                var someCompany = new Customer
+                                  {
+                                      Address = new Address
+                                                    {
+                                                        City = "Stora mellösa",
+                                                        Line1 = "Linfrövägen " + i,
+                                                        State = "T",
+                                                        ZipCode = "71572"
+                                                    },
+                                      Name = "Precio" + i,
 
-            //                      };
+                                  };
 
-            //    ctx.GetCollection<Customer>().Add(acmeInc);
+                ctx.GetCollection<Customer>().Add(someCompany);
 
-            //    var specialOrder = new Order
-            //                           {
-            //                               CustomerId = Guid.NewGuid(),
-            //                               OrderDate = DateTime.Now,
-            //                               OrderDetails = new List<OrderDetail>
-            //                                                  {
-            //                                                      new OrderDetail
-            //                                                          {
-            //                                                              ItemPrice = i,
-            //                                                              ProductNo = "foo" + i,
-            //                                                              Quantity = i
-            //                                                          },
-            //                                                  },
-            //                               ShippingAddress = new Address
-            //                                                     {
-            //                                                         City = "Örebro",
-            //                                                         Line1 = "Fabriksgatan 123",
-            //                                                         ZipCode = "71580"
-            //                                                     },
-            //                               Status = OrderStatus.PreOrder,
-            //                           };
+                var someOrder = new Order
+                                       {
+                                           CustomerId = Guid.NewGuid(),
+                                           OrderDate = DateTime.Now,
+                                           ShippingDate = DateTime.Now,
+                                           OrderDetails = new List<OrderDetail>
+                                                              {
+                                                                  new OrderDetail
+                                                                      {
+                                                                          ItemPrice = 123,
+                                                                          ProductNo = "banan",
+                                                                          Quantity = 432
+                                                                      },
+                                                                      new OrderDetail
+                                                                      {
+                                                                          ItemPrice = 123,
+                                                                          ProductNo = "äpple",
+                                                                          Quantity = 432
+                                                                      },
+                                                                      new OrderDetail
+                                                                      {
+                                                                          ItemPrice = 123,
+                                                                          ProductNo = "gurka",
+                                                                          Quantity = 432
+                                                                      },
+                                                              },
+                                           ShippingAddress = new Address
+                                                                 {
+                                                                     City = "gdfgdf",
+                                                                     Line1 = "dfgdgdfgd",
+                                                                     ZipCode = "gdfgdfgd"
+                                                                 },
+                                           Status = OrderStatus.Shipped,
+                                       };
 
-            //    ctx.GetCollection<Order>().Add(specialOrder);
+                ctx.GetCollection<Order>().Add(someOrder);
+                //var result = DocumentSerializer.Serialize(specialOrder);
+                //Console.WriteLine(result.ToString());
+                //ctx.GetCollection<Order>().Add(specialOrder);
+                //ctx.SaveChanges();
+                //var des = DocumentDeserializer.Deserialize(result);
 
-            //    var address = new Address()
-            //                      {
-            //                          City = "Örebro",
-            //                          Line1 = "blabla",
-            //                          ZipCode = "" + i ,
-            //                      };
 
-            //    ctx.GetCollection<Address>().Add(address);
-            //}
-            //ctx.SaveChanges();
+
+
+
+
+                //    var address = new Address()
+                //                      {
+                //                          City = "Örebro",
+                //                          Line1 = "blabla",
+                //                          ZipCode = "" + i ,
+                //                      };
+
+                //    ctx.GetCollection<Address>().Add(address);
+                //}
+                
+            }
+            ctx.SaveChanges();
+            Console.ReadLine();
         }
     }
 
@@ -107,17 +142,42 @@ namespace ProjectionSample
 
     public class Customer
     {
+        [DocumentId]
+        public Guid Id { get; private set; }
+
+        public Customer()
+        {
+            this.Id = Guid.NewGuid();
+        }
+
         public string Name { get; set; }
         public Address Address { get; set; }
+
+        public Order NewOrder()
+        {
+            return new Order
+            {
+                CustomerId = this.Id,
+            };
+        }
     }
 
     public class Order
     {
+        [DocumentId]
+        public Guid Id { get; private set; }
+
+        public Order()
+        {
+            this.Id = Guid.NewGuid();
+        }
+
         public DateTime OrderDate { get; set; }
         public DateTime? ShippingDate { get; set; }
         public Guid CustomerId { get; set; }
         public Address ShippingAddress { get; set; }
         public ICollection<OrderDetail> OrderDetails { get; set; }
+
         public decimal OrderTotal
         {
             get { return OrderDetails.Sum(d => d.Quantity * d.ItemPrice); }
@@ -133,6 +193,7 @@ namespace ProjectionSample
         Shipped,
         Cancelled,
     }
+
     public class OrderDetail
     {
         public decimal Quantity { get; set; }

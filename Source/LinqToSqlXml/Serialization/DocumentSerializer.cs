@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Xml;
 using System.Xml.Linq;
@@ -11,141 +11,145 @@ namespace LinqToSqlXml
     {
         public static XElement Serialize(object item)
         {
-            var objectTag = new XElement("object");
-            Type itemType = item.GetType();
-            objectTag.Add(new XAttribute("type", itemType.SerializedName()));
+            var root = new XElement("document");
+            Serialize(item, root);
+            return root;
+        }
 
-            var typesTag = new XElement("types");
-            objectTag.Add(typesTag);
-            Type currentType = itemType;
-            while (currentType != null)
+
+        private static void Serialize(object value, XElement ownerTag)
+        {
+            if (value == null)
             {
-                var typeTag = new XElement("type", currentType.SerializedName());
-                typesTag.Add(typeTag);
+                ownerTag.Add(new XAttribute("type", "null"));
+                return;
+            }
+            if (value is string)
+            {
+                ownerTag.Add(new XAttribute("type", "string"));
+                ownerTag.Add(SerializeString((string) value));
+                return;
+            }
+            if (value is Guid || value is Guid?)
+            {
+                ownerTag.Add(new XAttribute("type", "guid"));
+                ownerTag.Add(SerializeGuid((Guid) value));
+                return;
+            }
+            if (value is bool || value is bool?)
+            {
+                ownerTag.Add(new XAttribute("type", "bool"));
+                ownerTag.Add(SerializeBool((bool) value));
+                return;
+            }
+            if (value is decimal || value is decimal?)
+            {
+                ownerTag.Add(new XAttribute("type", "decimal"));
+                ownerTag.Add(SerializeDecimal((decimal) value));
+                return;
+            }
+            if (value is double || value is double?)
+            {
+                ownerTag.Add(new XAttribute("type", "double"));
+                ownerTag.Add(SerializeDouble((double) value));
+                return;
+            }
+            if (value is int || value is int?)
+            {
+                ownerTag.Add(new XAttribute("type", "int"));
+                ownerTag.Add(SerializeInt((int) value));
+                return;
+            }
+            if (value is DateTime || value is DateTime?)
+            {
+                ownerTag.Add(new XAttribute("type", "datetime"));
+                ownerTag.Add(SerializeDateTime((DateTime) value));
+                return;
+            }
+            if (value is IEnumerable)
+            {
+                ownerTag.Add(new XAttribute("type", "collection"));
+                foreach (object childValue in (IList) value)
+                {
+                    var collectionElement = new XElement("element");
+                    Serialize(childValue, collectionElement);
+                    ownerTag.Add(collectionElement);
+                }
+                return;
+            }
+            if (value is Enum)
+            {
+// ReSharper disable PossibleInvalidCastException
+                var intValue = (int) value;
+// ReSharper restore PossibleInvalidCastException
+                ownerTag.Add(new XAttribute("type", "int"));
+                ownerTag.Add(SerializeInt(intValue));
+                return;
+            }
+            Type itemType = value.GetType();
+            ownerTag.Add(new XAttribute("type", itemType.SerializedName()));
+            var metaTags = new XElement("__meta");
+
+            Type currentType = itemType;
+            while (currentType != null && currentType != typeof (object))
+            {
+                if (currentType != itemType)
+                {
+                    var typeTag = new XElement("type", currentType.SerializedName());
+                    metaTags.Add(typeTag);
+                }
 
                 Type[] interfaces = currentType.GetInterfaces();
                 foreach (Type interfaceType in interfaces)
                 {
                     var interfaceTag = new XElement("type", interfaceType.SerializedName());
-                    typesTag.Add(interfaceTag);
+                    metaTags.Add(interfaceTag);
                 }
                 currentType = currentType.BaseType;
             }
 
-            var stateTag = new XElement("state");
-            objectTag.Add(stateTag);
+            //only add metadata if metadata exists
+            if (metaTags.Elements().Count() > 0)
+                ownerTag.Add(metaTags);
 
             PropertyInfo[] properties = itemType.GetProperties();
             foreach (PropertyInfo property in properties)
             {
-                object value = property.GetValue(item, null);
-                if (value == null)
-                {
-                    var propertyTag = new XElement(property.Name);
-                    propertyTag.Add(new XAttribute("type", "null"));
-                    stateTag.Add(propertyTag);
-                }
-                else if (value is string)
-                {
-                    var propertyTag = new XElement(property.Name, SerializeString((string) value));
-                    propertyTag.Add(new XAttribute("type", "string"));
-                    stateTag.Add(propertyTag);
-                }
-                else if (value is Guid || value is Guid?)
-                {
-                    var propertyTag = new XElement(property.Name, SerializeGuid((Guid) value));
-                    propertyTag.Add(new XAttribute("type", "guid"));
-                    stateTag.Add(propertyTag);
-                }
-                else if (value is bool || value is bool?)
-                {
-                    var propertyTag = new XElement(property.Name, SerializeBool((bool) value));
-                    propertyTag.Add(new XAttribute("type", "bool"));
-                    stateTag.Add(propertyTag);
-                }
-                else if (value is decimal || value is decimal?)
-                {
-                    var propertyTag = new XElement(property.Name, SerializeDecimal((decimal) value));
-                    propertyTag.Add(new XAttribute("type", "decimal"));
-                    stateTag.Add(propertyTag);
-                }
-                else if (value is double || value is double?)
-                {
-                    var propertyTag = new XElement(property.Name, SerializeDouble((double) value));
-                    propertyTag.Add(new XAttribute("type", "double"));
-                    stateTag.Add(propertyTag);
-                }
-                else if (value is int || value is int?)
-                {
-                    var propertyTag = new XElement(property.Name, SerializeInt((int) value));
-                    propertyTag.Add(new XAttribute("type", "int"));
-                    stateTag.Add(propertyTag);
-                }
-                else if (value is DateTime || value is DateTime?)
-                {
-                    var propertyTag = new XElement(property.Name, SerializeDateTime((DateTime) value));
-                    propertyTag.Add(new XAttribute("type", "datetime"));
-                    stateTag.Add(propertyTag);
-                }
-                else if (value is IEnumerable)
-                {
-                    var propertyTag = new XElement(property.Name);
-                    propertyTag.Add(new XAttribute("type", "collection"));
-                    foreach (object childValue in (IList) value)
-                    {
-                        XElement collectionElement = Serialize(childValue);
-                        propertyTag.Add(collectionElement);
-                    }
-                    stateTag.Add(propertyTag);
-                }
-                else if (value is Enum)
-                {
-                    var intValue = (int) value;
-                    var propertyTag = new XElement(property.Name, intValue.ToString());
-                    propertyTag.Add(new XAttribute("type", "int"));
-                    stateTag.Add(propertyTag);
-                }
-                else
-                {
-                    var propertyTag = new XElement(property.Name);
-                    propertyTag.Add(new XAttribute("type", "ref"));
-                    XElement propertyReference = Serialize(value);
-                    propertyTag.Add(propertyReference);
-                    stateTag.Add(propertyTag);
-                }
-            }
+                var propertyTag = new XElement(property.Name);
+                object propertyValue = property.GetValue(value, null);
 
-            return objectTag;
+                Serialize(propertyValue, propertyTag);
+                ownerTag.Add(propertyTag);
+            }
         }
 
         public static string GetSerializedTypeName(Type type)
         {
-            if (type == typeof(bool))
+            if (type == typeof (bool))
                 return "bool";
 
-            if (type == typeof(int))
+            if (type == typeof (int))
                 return "int";
 
-            if (type == typeof(double))
+            if (type == typeof (double))
                 return "double";
 
-            if (type == typeof(decimal))
+            if (type == typeof (decimal))
                 return "decimal";
 
-            if (type == typeof(DateTime))
+            if (type == typeof (DateTime))
                 return "datetime";
 
-            if (type == typeof(string))
+            if (type == typeof (string))
                 return "string";
 
-            if (type == typeof(Guid))
+            if (type == typeof (Guid))
                 return "guid";
 
-            if (typeof(IEnumerable).IsAssignableFrom(type))
+            if (typeof (IEnumerable).IsAssignableFrom(type))
                 return "collection";
 
-            return "ref";
-            throw new NotSupportedException("Unknown type");
+            return type.SerializedName();
         }
 
         public static string SerializeDateTime(DateTime value)
@@ -182,16 +186,14 @@ namespace LinqToSqlXml
         {
             return value;
         }
-
-
-       
     }
 
     public static class TypeExtensions
     {
         public static string SerializedName(this Type self)
         {
-            return string.Format("{0}, {1}", self.FullName, self.Assembly.FullName.Substring(0, self.Assembly.FullName.IndexOf(",")));
+            return string.Format("{0}, {1}", self.FullName,
+                                 self.Assembly.FullName.Substring(0, self.Assembly.FullName.IndexOf(",")));
         }
     }
 }

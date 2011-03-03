@@ -1,17 +1,19 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Linq.Expressions;
 
 namespace LinqToSqlXml
 {
-    public class DocumentQuery<T> :   IQueryable<T> , IOrderedQueryable<T>
+    public class DocumentQuery<T> : IQueryable<T>, IOrderedQueryable<T>
     {
+        private readonly Expression expression;
+        private readonly DocumentQueryProvider queryProvider;
 
         public DocumentQuery(DocumentQueryProvider queryProvider)
         {
-            this.expression = System.Linq.Expressions.Expression.Constant(this);
+            expression = Expression.Constant(this);
             this.queryProvider = queryProvider;
         }
 
@@ -21,14 +23,16 @@ namespace LinqToSqlXml
             this.queryProvider = queryProvider;
         }
 
+        #region IQueryable<T> Members
+
         public IEnumerator<T> GetEnumerator()
         {
-            var result = queryProvider.ExecuteQuery<T>(expression);
-            var enumerator = ((IEnumerable<T>) result).GetEnumerator();
+            IEnumerable<T> result = queryProvider.ExecuteQuery<T>(expression);
+            IEnumerator<T> enumerator = (result).GetEnumerator();
             return enumerator;
         }
 
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        IEnumerator IEnumerable.GetEnumerator()
         {
             throw new NotImplementedException();
         }
@@ -38,8 +42,6 @@ namespace LinqToSqlXml
             get { return typeof (T); }
         }
 
-        private Expression expression;
-        private DocumentQueryProvider queryProvider;
         Expression IQueryable.Expression
         {
             get { return expression; }
@@ -49,5 +51,7 @@ namespace LinqToSqlXml
         {
             get { return queryProvider; }
         }
-    }    
+
+        #endregion
+    }
 }

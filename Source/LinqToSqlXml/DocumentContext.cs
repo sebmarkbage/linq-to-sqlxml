@@ -1,37 +1,34 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using LinqToSqlXml;
-
-namespace LinqToSqlXml
+﻿namespace LinqToSqlXml
 {
     public class DocumentContext
     {
-
-        public void EnsureDatabaseExists()
-        {
-            if (!db.DatabaseExists())
-                this.db.CreateDatabase();
-        }
+        private readonly DocumentDataContext db = new DocumentDataContext();
+        private readonly string dbInstance;
 
         public DocumentContext(string dbInstance)
         {
             this.dbInstance = dbInstance;
         }
 
-        private DocumentDataContext db = new DocumentDataContext();
-        private string dbInstance;
-        
-        public DocumentCollection<T> GetCollection<T>() where T : class
+        public string DbInstance
         {
-            return new DocumentCollection<T>(this);
+            get { return dbInstance; }
         }
 
-        public string DbInstance { get { return dbInstance; } }
         internal DocumentDataContext DB
         {
             get { return db; }
+        }
+
+        public void EnsureDatabaseExists()
+        {
+            if (!db.DatabaseExists())
+                db.CreateDatabase();
+        }
+
+        public DocumentCollection<T> GetCollection<T>() where T : class
+        {
+            return new DocumentCollection<T>(this);
         }
 
         public void SaveChanges()
@@ -39,6 +36,4 @@ namespace LinqToSqlXml
             db.SubmitChanges();
         }
     }
-
-    
 }

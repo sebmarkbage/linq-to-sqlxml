@@ -1,7 +1,7 @@
-﻿using LinqToSqlXml;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using LinqToSqlXml;
 
 namespace BlogSample
 {
@@ -25,49 +25,51 @@ namespace BlogSample
             //ctx.SaveChanges();
             //Console.Read();
 
-            var query = from blogpost in ctx.GetCollection<BlogPost>().AsQueryable()
-                        where blogpost.Comments.Any(c => c.UserName == "roger") && blogpost.CommentCount == 1
-                        select blogpost;
+            IQueryable<BlogPost> query = from blogpost in ctx.GetCollection<BlogPost>().AsQueryable()
+                                         where
+                                             blogpost.Comments.Any(c => c.UserName == "roger") &&
+                                             blogpost.CommentCount == 1
+                                         select blogpost;
 
-            var result = query.ToList();
+            List<BlogPost> result = query.ToList();
 
-            foreach (var blogpost in result)
+            foreach (BlogPost blogpost in result)
             {
                 Console.WriteLine(blogpost.Topic);
             }
-
         }
     }
 
 
     public class BlogPost
     {
-        [DocumentId]
-        public Guid Id { get; set; }
-
         public BlogPost()
         {
             Id = Guid.NewGuid();
             Comments = new List<Comment>();
         }
 
+        [DocumentId]
+        public Guid Id { get; set; }
+
         public string Topic { get; set; }
         public string Body { get; set; }
         public ICollection<Comment> Comments { get; set; }
+
         public int CommentCount
         {
             get { return Comments.Count; }
         }
 
-        public void ReplyTo(string body,string userName)
+        public void ReplyTo(string body, string userName)
         {
-            this.Comments.Add(new Comment() {Body = body, UserName = userName});
+            Comments.Add(new Comment {Body = body, UserName = userName});
         }
+
         public void AddTag(string tag)
         {
         }
     }
-
 
 
     public class Comment
