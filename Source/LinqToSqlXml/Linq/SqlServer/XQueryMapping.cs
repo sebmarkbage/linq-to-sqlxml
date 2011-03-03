@@ -31,6 +31,5 @@ namespace LinqToSqlXml
                                                                                {"Min", "fn:min"},
                                                                                {"Average", "fn:avg"},
                                                                            };
-
     }
 }

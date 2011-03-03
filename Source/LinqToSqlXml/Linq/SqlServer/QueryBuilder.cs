@@ -11,19 +11,13 @@ namespace LinqToSqlXml.SqlServer
     {
         private SelectorBuilder selectorBuilder = new SelectorBuilder();
         private PredicateBuilder predicateBuilder = new PredicateBuilder();
-        private string collectionName;
-        public string from = "from documents";
-        private int limit = -1;
+        public string limit = "";
         public string orderby = "";
-        private string where = "";
         private string wherepredicate = "";
-        private string documentDataSelector = "DocumentData"; //just the column by default
+        public string documentDataSelector = "DocumentData"; //just the column by default
 
-        public QueryBuilder(string collectionName)
+        public QueryBuilder()
         {
-            this.collectionName = collectionName;
-            where = string.Format("where CollectionName = '{0}' ", collectionName);
-            
         }
 
         public string Where
@@ -31,9 +25,9 @@ namespace LinqToSqlXml.SqlServer
             get
             {
                 if (wherepredicate != "")
-                    return string.Format("{0} and {1}(documentdata.exist('/document[{2}]')) = 1", where,Environment.NewLine, wherepredicate);
+                    return string.Format(" and (documentdata.exist('/document[{0}]')) = 1", wherepredicate);
                 else
-                    return where;
+                    return "";
             }
         }
 
@@ -72,9 +66,10 @@ namespace LinqToSqlXml.SqlServer
 
         private void TranslateToTake(MethodCallExpression node)
         {
-            limit = (int) (node.Arguments[1] as ConstantExpression).Value;
+            limit = string.Format("top {0}", (int)(node.Arguments[1] as ConstantExpression).Value);
         }
 
+        //move to predicate builder and fix it
         private void TranslateToOfType(MethodCallExpression node)
         {
             var typeExpression = node.Arguments[0] as ConstantExpression;
@@ -82,11 +77,11 @@ namespace LinqToSqlXml.SqlServer
             var queryable = value as IQueryable;
             Type ofType = queryable.ElementType;
 
-            where += " and " + Environment.NewLine;
+//            where += " and " + Environment.NewLine;
             string typeName = ofType.SerializedName();
             string query = string.Format("(documentdata.exist('/document/__meta/type/text()[. = \"{0}\"]') = 1)",
                                          typeName);
-            where += query;
+//            where += query;
         }
 
         private void TranslateToOrderBy(MethodCallExpression node)
@@ -127,15 +122,6 @@ namespace LinqToSqlXml.SqlServer
                 return prev + current;
             }
             throw new NotSupportedException("Unknown order by clause");
-        }
-
-
-        internal string GetSelect()
-        {
-            if (limit != -1)
-                return string.Format("select top {0} Id,{1}", limit, documentDataSelector);
-
-            return string.Format("select Id,{0}", documentDataSelector);
         }
     }
 }

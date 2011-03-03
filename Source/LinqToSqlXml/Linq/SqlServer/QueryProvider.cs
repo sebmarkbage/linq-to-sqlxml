@@ -50,14 +50,20 @@ namespace LinqToSqlXml
 
         public IEnumerable<TResult> ExecuteQuery<TResult>(Expression expression)
         {
-            var visitor = new QueryBuilder(documentCollection.CollectionName);
-            visitor.Visit(expression);
+            var queryBuilder = new QueryBuilder();
+            queryBuilder.Visit(expression);
 
-            string sql =
-                visitor.GetSelect() + Environment.NewLine +
-                visitor.from + Environment.NewLine +
-                visitor.Where + Environment.NewLine +
-                visitor.orderby;
+            var sql = string.Format(@"
+    select {0} Id,{1} 
+    from Documents 
+    where CollectionName = '{2}'
+    {3} 
+    {4}", 
+    queryBuilder.limit, 
+    queryBuilder.documentDataSelector, 
+    documentCollection.CollectionName, 
+    queryBuilder.Where, 
+    queryBuilder.orderby);
 
             IEnumerable<Document> result = documentCollection.ExecuteQuery(sql);
             return DocumentEnumerator<TResult>(result);
