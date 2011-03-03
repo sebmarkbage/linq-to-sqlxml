@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Linq.Expressions;
 
-namespace LinqToSqlXml
+namespace LinqToSqlXml.SqlServer
 {
-    public static class SqlServerXQuery
+    public static class XQueryMapping
     {
         public static readonly Dictionary<ExpressionType, string> Operators = new Dictionary<ExpressionType, string>
                 {
@@ -31,5 +31,27 @@ namespace LinqToSqlXml
                                                                                {"Min", "fn:min"},
                                                                                {"Average", "fn:avg"},
                                                                            };
+
+        public static readonly string xsTrue = "fn:true()";
+        public static readonly string xsFalse = "fn:false()";
+
+        public static string BuildLiteral(object value)
+        {
+            if (value is string)
+                return "\"" + DocumentSerializer.SerializeString((string)value) + "\"";
+            if (value is int)
+                return string.Format("xs:int({0})", DocumentSerializer.SerializeDecimal((int)value));
+            if (value is decimal)
+                return string.Format("xs:decimal({0})", DocumentSerializer.SerializeDecimal((decimal)value));
+            if (value is DateTime)
+                return string.Format("xs:dateTime({0})", DocumentSerializer.SerializeDateTime((DateTime)value));
+            if (value is bool)
+                if ((bool)value)
+                    return XQueryMapping.xsTrue;
+                else
+                    return XQueryMapping.xsFalse;
+
+            return value.ToString();
+        }
     }
 }

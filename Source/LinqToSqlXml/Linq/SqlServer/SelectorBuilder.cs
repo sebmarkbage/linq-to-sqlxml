@@ -124,7 +124,7 @@ namespace LinqToSqlXml.SqlServer
         private string BuildSelectorBinaryExpression(Expression expression)
         {
             var binaryExpression = expression as BinaryExpression;
-            string op = SqlServerXQuery.Operators[expression.NodeType];
+            string op = XQueryMapping.Operators[expression.NodeType];
             string left = BuildSelector(binaryExpression.Left);
 
             var rightAsUnary = binaryExpression.Right as UnaryExpression;
@@ -221,7 +221,7 @@ namespace LinqToSqlXml.SqlServer
                     case "Max":
                     case "Average":
                         return BuildSelectorAggregate(methodCallExpression,
-                                                      SqlServerXQuery.Functions[methodCallExpression.Method.Name]);
+                                                      XQueryMapping.Functions[methodCallExpression.Method.Name]);
                     default:
                         break;
                 }

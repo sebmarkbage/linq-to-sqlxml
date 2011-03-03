@@ -87,7 +87,7 @@ namespace LinqToSqlXml.SqlServer
                     case "Max":
                     case "Average":
                         return BuildAggregatePredicate(methodCallExpression,
-                                                       SqlServerXQuery.Functions[methodCallExpression.Method.Name]);
+                                                       XQueryMapping.Functions[methodCallExpression.Method.Name]);
                     default:
                         break;
                 }
@@ -133,7 +133,7 @@ namespace LinqToSqlXml.SqlServer
         private string BuildPredicateBinaryExpression(Expression expression)
         {
             var binaryExpression = expression as BinaryExpression;
-            string op = SqlServerXQuery.Operators[expression.NodeType];
+            string op = XQueryMapping.Operators[expression.NodeType];
             string left = BuildPredicate(binaryExpression.Left);
 
 
@@ -169,14 +169,21 @@ namespace LinqToSqlXml.SqlServer
             if (memberExpression.Member.DeclaringType == typeof(DateTime))
             {
                 if (memberName == "Now")
-                    return string.Format("xs:dateTime(\"{0}\")", DocumentSerializer.SerializeDateTime(DateTime.Now));
+                    return XQueryMapping.BuildLiteral(DateTime.Now);                    
             }
 
+            return string.Format("({0})[1]",BuildPredicateMemberAccessReq(expression));
+        }
 
-            string current = string.Format("{0}[1]", memberName);
+        private string BuildPredicateMemberAccessReq(Expression expression)
+        {
+            var memberExpression = expression as MemberExpression;
+            string memberName = memberExpression.Member.Name;
+
+            string current = string.Format("{0}", memberName);
             string prev = "";
             if (memberExpression.Expression is MemberExpression)
-                prev = BuildPredicate(memberExpression.Expression);
+                prev = BuildPredicateMemberAccessReq(memberExpression.Expression) +"/" ;
             else
                 prev = CurrentPath;
 
@@ -188,26 +195,8 @@ namespace LinqToSqlXml.SqlServer
         private string BuildPredicateConstant(Expression expression)
         {
             var constantExpression = expression as ConstantExpression;
-            Type type = constantExpression.Type;
             object value = constantExpression.Value;
-
-            if (type == typeof(string))
-                return "\"" + DocumentSerializer.SerializeString((string)value) + "\"";
-            if (type == typeof(int))
-                return string.Format("xs:int({0})", DocumentSerializer.SerializeDecimal((int)value));
-            if (type == typeof(decimal))
-                return string.Format("xs:decimal({0})", DocumentSerializer.SerializeDecimal((decimal)value));
-            if (type == typeof(DateTime))
-                return string.Format("xs:dateTime({0})", DocumentSerializer.SerializeDateTime((DateTime)value));
-            if (type == typeof(DateTime))
-                return string.Format("xs:dateTime({0})", DocumentSerializer.SerializeDateTime((DateTime)value));
-            if (type == typeof(bool))
-                if ((bool)value)
-                    return string.Format("fn:true()");
-                else
-                    return string.Format("fn:false()");
-            
-            return constantExpression.Value.ToString();
+            return XQueryMapping.BuildLiteral(value);            
         }
 
         public string TranslateToOfType(MethodCallExpression node)
