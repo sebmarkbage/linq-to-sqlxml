@@ -23,7 +23,7 @@ namespace LinqToSqlXml.SqlServer
 
         public string TranslateToProjection(MethodCallExpression node)
         {
-            paths.Push("document[1]/");
+            paths.Push("document/");
             var unary = node.Arguments[1] as UnaryExpression;
             var lambda = unary.Operand as LambdaExpression;
             var selector1 = lambda.Body as NewExpression;
@@ -147,7 +147,17 @@ namespace LinqToSqlXml.SqlServer
 
         private string BuildSelectorMemberAccess(Expression expression)
         {
+            var memberExpression = expression as MemberExpression;
+            string memberName = memberExpression.Member.Name;
+
+            if (memberExpression.Member.DeclaringType == typeof(DateTime))
+            {
+                if (memberName == "Now")
+                    return string.Format("xs:dateTime(\"{0}\")", DocumentSerializer.SerializeDateTime(DateTime.Now));
+            }
+
             string result = BuildSelectorMemberAccessRec(expression);
+            result = string.Format("({0})[1]", result);
 
             if (expression.Type == typeof(string))
                 return string.Format("xs:string({0})", result);
@@ -174,17 +184,11 @@ namespace LinqToSqlXml.SqlServer
         {
             var memberExpression = expression as MemberExpression;
             string memberName = memberExpression.Member.Name;
-
-            if (memberExpression.Member.DeclaringType == typeof(DateTime))
-            {
-                if (memberName == "Now")
-                    return string.Format("xs:dateTime(\"{0}\")", DocumentSerializer.SerializeDateTime(DateTime.Now));
-            }
-
-            string current = string.Format("{0}[1]", memberName);
+           
+            string current = string.Format("{0}", memberName);
             string prev = "";
             if (memberExpression.Expression is MemberExpression)
-                prev = BuildSelector(memberExpression.Expression);
+                prev = BuildSelectorMemberAccessRec(memberExpression.Expression) + "/";
             else
             {
                 return CurrentPath + current;
