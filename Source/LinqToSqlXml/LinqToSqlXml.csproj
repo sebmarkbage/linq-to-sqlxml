@@ -55,7 +55,10 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>DocumentDB.dbml</DependentUpon>
     </Compile>
-    <Compile Include="Linq\DocumentQueryProvider.cs" />
+    <Compile Include="Linq\SqlServer\PredicateBuilder.cs" />
+    <Compile Include="Linq\SqlServer\QueryProvider.cs" />
+    <Compile Include="Linq\SqlServer\SelectorBuilder.cs" />
+    <Compile Include="Linq\SqlServer\XQueryMapping.cs" />
     <Compile Include="Serialization\DocumentDeserializer.cs" />
     <Compile Include="Serialization\DocumentSerializer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -65,7 +68,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
     <Compile Include="Linq\DocumentQuery.cs" />
-    <Compile Include="Linq\DocumentQueryBuilder.cs" />
+    <Compile Include="Linq\SqlServer\QueryBuilder.cs" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{3259AA49-8AA1-44D3-9025-A0B520596A8C}" />

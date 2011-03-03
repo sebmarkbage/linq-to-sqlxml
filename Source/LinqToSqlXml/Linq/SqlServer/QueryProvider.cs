@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Xml.Linq;
+using LinqToSqlXml.SqlServer;
 
 namespace LinqToSqlXml
 {
-    public class DocumentQueryProvider : IQueryProvider
+    public class SqlServerQueryProvider : IQueryProvider
     {
         private readonly DocumentCollection documentCollection;
 
-        public DocumentQueryProvider(DocumentCollection documentCollection)
+        public SqlServerQueryProvider(DocumentCollection documentCollection)
         {
             this.documentCollection = documentCollection;
         }
@@ -49,7 +50,7 @@ namespace LinqToSqlXml
 
         public IEnumerable<TResult> ExecuteQuery<TResult>(Expression expression)
         {
-            var visitor = new DocumentQueryBuilder(documentCollection.CollectionName);
+            var visitor = new QueryBuilder(documentCollection.CollectionName);
             visitor.Visit(expression);
 
             string sql =

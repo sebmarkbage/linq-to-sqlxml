@@ -9,15 +9,15 @@ namespace LinqToSqlXml
     public class DocumentQuery<T> : IQueryable<T>, IOrderedQueryable<T>
     {
         private readonly Expression expression;
-        private readonly DocumentQueryProvider queryProvider;
+        private readonly SqlServerQueryProvider queryProvider;
 
-        public DocumentQuery(DocumentQueryProvider queryProvider)
+        public DocumentQuery(SqlServerQueryProvider queryProvider)
         {
             expression = Expression.Constant(this);
             this.queryProvider = queryProvider;
         }
 
-        public DocumentQuery(DocumentQueryProvider queryProvider, Expression expression)
+        public DocumentQuery(SqlServerQueryProvider queryProvider, Expression expression)
         {
             this.expression = expression;
             this.queryProvider = queryProvider;

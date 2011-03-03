@@ -68,7 +68,7 @@ namespace LinqToSqlXml
 
         public IQueryable<T> AsQueryable()
         {
-            var queryProvider = new DocumentQueryProvider(this);
+            var queryProvider = new SqlServerQueryProvider(this);
             return new DocumentQuery<T>(queryProvider);
         }
     }
