@@ -55,6 +55,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>DocumentDB.dbml</DependentUpon>
     </Compile>
+    <Compile Include="Linq\SqlServer\OrderByBuilder.cs" />
     <Compile Include="Linq\SqlServer\PredicateBuilder.cs" />
     <Compile Include="Linq\SqlServer\QueryProvider.cs" />
     <Compile Include="Linq\SqlServer\SelectorBuilder.cs" />

@@ -183,20 +183,30 @@ namespace LinqToSqlXml.SqlServer
             return prev + current;
         }
 
+
+        //TODO refactor
         private string BuildPredicateConstant(Expression expression)
         {
             var constantExpression = expression as ConstantExpression;
+            Type type = constantExpression.Type;
             object value = constantExpression.Value;
 
-            if (constantExpression.Type == typeof(string))
-                return "\"" + constantExpression.Value + "\"";
-            if (constantExpression.Type == typeof(int))
+            if (type == typeof(string))
+                return "\"" + DocumentSerializer.SerializeString((string)value) + "\"";
+            if (type == typeof(int))
                 return string.Format("xs:int({0})", DocumentSerializer.SerializeDecimal((int)value));
-            if (constantExpression.Type == typeof(decimal))
+            if (type == typeof(decimal))
                 return string.Format("xs:decimal({0})", DocumentSerializer.SerializeDecimal((decimal)value));
-            if (constantExpression.Type == typeof(DateTime))
+            if (type == typeof(DateTime))
                 return string.Format("xs:dateTime({0})", DocumentSerializer.SerializeDateTime((DateTime)value));
-
+            if (type == typeof(DateTime))
+                return string.Format("xs:dateTime({0})", DocumentSerializer.SerializeDateTime((DateTime)value));
+            if (type == typeof(bool))
+                if ((bool)value)
+                    return string.Format("fn:true()");
+                else
+                    return string.Format("fn:false()");
+            
             return constantExpression.Value.ToString();
         }
 
@@ -207,7 +217,7 @@ namespace LinqToSqlXml.SqlServer
             string typeName = ofType.SerializedName();
 
             //check if type attrib equals typename OR if typename exists in metadata type array
-            string query = string.Format("(__meta[type[. = \"{0}\"]] or @type=\"{0}\")", typeName);
+            string query = string.Format("(@type=\"{0}\" or __meta[type[. = \"{0}\"]])", typeName);
             return query;
         }
     }
