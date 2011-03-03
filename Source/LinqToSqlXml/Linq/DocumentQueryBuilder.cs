@@ -57,7 +57,7 @@ namespace LinqToSqlXml
         {
             get
             {
-                if (wherepredicate != null)
+                if (wherepredicate != "")
                     return string.Format("{0} and {1}(documentdata.exist('/document[{2}]')) = 1", where,Environment.NewLine, wherepredicate);
                 else
                     return where;
