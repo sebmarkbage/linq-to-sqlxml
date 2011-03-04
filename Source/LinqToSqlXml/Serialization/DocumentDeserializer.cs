@@ -10,13 +10,14 @@ namespace LinqToSqlXml
 {
     public static class DocumentDeserializer
     {
-        public static object Deserialize(XElement xml)
+        public static object Deserialize(XElement xml,Type expectedType)
         {
             //todo fix
 
 // ReSharper disable PossibleNullReferenceException
             string typeName = xml.Attribute("type").Value;
 // ReSharper restore PossibleNullReferenceException
+
             string value = xml.Value;
             if (typeName == "string")
                 return DeserializeString(value);
@@ -35,32 +36,50 @@ namespace LinqToSqlXml
             if (typeName == "null")
                 return null;
             if (typeName == "collection")
-                return xml.Elements().Select(Deserialize).ToList();
+            {
+                var elementExpectedType = typeof(object);
+                if (expectedType.IsGenericType)
+                    elementExpectedType = expectedType.GetGenericArguments()[1];
+
+                return xml.Elements().Select(e => Deserialize(e, elementExpectedType)).ToList();
+            }
 
 
             Type type = Type.GetType(typeName);
+            if (typeName == "dynamic")
+                type = expectedType;
 
             if (type == null)
                 return null;
 
-            object result = Activator.CreateInstance(type, null);
-            foreach (XElement xProperty in xml.Elements().Where(e => !e.Name.LocalName.StartsWith("__")))
+            if (type.GetConstructor(new Type[] { }) == null)
             {
-                PropertyInfo property = type.GetProperty(xProperty.Name.LocalName);
-                if (property.CanWrite == false)
-                    continue;
-
-                object propertyValue = Deserialize(xProperty);
-                if (propertyValue is List<object>)
-                {
-                    DeserializeList(value, property, propertyValue, result);
-                }
-                else
-                {
-                    property.SetValue(result, propertyValue, null);
-                }
+                //deserialize with ctor args
+                return null;
             }
-            return result;
+            else
+            {
+                //deserialize with default ctor
+                object result = Activator.CreateInstance(type, null);
+                foreach (XElement xProperty in xml.Elements().Where(e => !e.Name.LocalName.StartsWith("__")))
+                {
+                    PropertyInfo property = type.GetProperty(xProperty.Name.LocalName);
+                    if (property.CanWrite == false)
+                        continue;
+                    var expectedPropertyType = property.PropertyType;
+
+                    object propertyValue = Deserialize(xProperty, expectedPropertyType);
+                    if (propertyValue is List<object>)
+                    {
+                        DeserializeList(value, property, propertyValue, result);
+                    }
+                    else
+                    {
+                        property.SetValue(result, propertyValue, null);
+                    }
+                }
+                return result;
+            }
         }
 
         private static void DeserializeList(string value, PropertyInfo property, object propertyValue, object result)

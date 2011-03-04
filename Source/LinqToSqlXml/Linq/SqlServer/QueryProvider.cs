@@ -44,7 +44,7 @@ namespace LinqToSqlXml
         {
             return documents
                 .Select(document => document.DocumentData)
-                .Select(xml => (TResult) DocumentDeserializer.Deserialize(xml))
+                .Select(xml => (TResult) DocumentDeserializer.Deserialize(xml,typeof(TResult)))
                 .Where(result => result != null);
         }
 
@@ -54,16 +54,16 @@ namespace LinqToSqlXml
             queryBuilder.Visit(expression);
 
             var sql = string.Format(@"
-    select {0} Id,{1} 
-    from Documents 
-    where CollectionName = '{2}'
-    {3} 
-    {4}", 
-    queryBuilder.limit, 
-    queryBuilder.documentDataSelector, 
-    documentCollection.CollectionName, 
-    queryBuilder.Where, 
-    queryBuilder.orderby);
+select {0} Id,{1} 
+from Documents 
+where CollectionName = '{2}'
+{3} 
+{4}", 
+queryBuilder.limit, 
+queryBuilder.documentDataSelector, 
+documentCollection.CollectionName, 
+queryBuilder.Where, 
+queryBuilder.orderby);
 
             IEnumerable<Document> result = documentCollection.ExecuteQuery(sql);
             return DocumentEnumerator<TResult>(result);

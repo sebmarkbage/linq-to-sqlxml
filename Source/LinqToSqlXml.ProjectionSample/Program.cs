@@ -32,14 +32,14 @@ namespace ProjectionSample
                                             where order.ShippingAddress.Line1 != "aa"
                                             where order.ShippingAddress is Address
                                             //select order
-                                            select new Projection
+                                            select new 
                                                        {
                                                            OrderTotal = order.OrderTotal,
                                                            CustomerId = order.CustomerId,
                                                            OrderDetails =
                                                                order.OrderDetails.Select(
                                                                    d =>
-                                                                   new ProjectionD()
+                                                                   new 
                                                                        {
                                                                            LineTotal = d.ItemPrice * d.Quantity
                                                                        }),

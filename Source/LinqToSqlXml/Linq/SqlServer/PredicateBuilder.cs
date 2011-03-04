@@ -192,8 +192,6 @@ namespace LinqToSqlXml.SqlServer
             return prev + current;
         }
 
-
-        //TODO refactor
         private string BuildPredicateConstant(Expression expression)
         {
             var constantExpression = expression as ConstantExpression;
